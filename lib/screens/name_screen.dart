@@ -5,7 +5,7 @@ import '../widgets/info_card.dart';
 import '../widgets/circle_icon.dart';
 import '../widgets/app_text.dart';
 import '../widgets/primary_input.dart';
-import 'level_selection.dart';
+import 'age.dart';
 import '../utils/smooth_route.dart';
 
 class NameScreen extends StatefulWidget {
@@ -106,11 +106,7 @@ class _NameScreenState extends State<NameScreen> {
                               ? () {
                                   Navigator.push(
                                     context,
-                                    SmoothRoute(
-                                      page: const LevelSelection(
-                                        title: 'Select Level',
-                                      ),
-                                    ),
+                                    SmoothRoute(page: const Age()),
                                   );
                                 }
                               : null,

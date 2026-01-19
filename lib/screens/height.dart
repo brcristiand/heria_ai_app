@@ -5,11 +5,11 @@ import '../widgets/info_card.dart';
 import '../widgets/circle_icon.dart';
 import '../widgets/app_text.dart';
 import '../widgets/primary_input.dart';
-import 'weight.dart';
+import 'level_selection.dart';
 import '../utils/smooth_route.dart';
 
-class Age extends StatelessWidget {
-  const Age({super.key});
+class Height extends StatelessWidget {
+  const Height({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -45,19 +45,19 @@ class Age extends StatelessWidget {
                             const CircleIcon(icon: 'assets/img/stats.png'),
                             const SizedBox(height: 16),
                             const TypoH4(
-                              'Age',
+                              'Height',
                               color: Colors.white70,
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
                             const TypoH1(
-                              'How Old Are \nYou?',
+                              'What Is Your \nHeight?',
                               color: Colors.white,
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 24),
                             const PrimaryInput(
-                              hintText: 'Please insert your age...',
+                              hintText: 'Please insert your height (cm)...',
                             ),
                             const SizedBox(height: 8),
                           ],
@@ -77,7 +77,11 @@ class Age extends StatelessWidget {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              SmoothRoute(page: const Weight()),
+                              SmoothRoute(
+                                page: const LevelSelection(
+                                  title: 'Select Level',
+                                ),
+                              ),
                             );
                           },
                         ),
