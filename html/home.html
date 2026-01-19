@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heria AI - Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(180deg, #ECECEC 0%, #515459 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="flex flex-col">
+    <!-- AppBar Placeholder -->
+    <header class="h-20 w-full flex items-center px-6"></header>
+
+    <main class="flex-1 flex flex-col justify-end p-6">
+        <div class="glass-card rounded-[32px] p-6 flex flex-col gap-6 shadow-2xl">
+            <!-- Header Section -->
+            <div class="flex items-center gap-4">
+                <div class="w-[84px] h-[84px] rounded-full bg-gray-300 bg-cover bg-center shrink-0 border-2 border-white/20" 
+                     style="background-image: url('https://heria.ai/wp-content/uploads/2021/01/chris-heria-1.jpg');">
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-white text-base font-medium opacity-90">Virtual Assistant</span>
+                    <h2 class="text-white text-2xl font-semibold leading-tight">Chris Heria AI</h2>
+                </div>
+            </div>
+
+            <!-- Intro Section -->
+            <div class="flex flex-col gap-2">
+                <p class="text-white/70 text-base leading-[2.0] font-medium">Hello!</p>
+                <p class="text-white text-sm leading-[2.0] font-medium">
+                    I'm Chris Heria AI, your virtual assistant here in the app. I'm excited to help you out—let's get to know each other!
+                </p>
+            </div>
+
+            <!-- Bottom Interaction -->
+            <div class="relative flex flex-col items-center pt-6">
+                <!-- Circle Icon (Negative overlap simulated) -->
+                <div class="absolute -top-4 w-20 h-20 rounded-full glass-card flex items-center justify-center shadow-lg z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/><path d="m9 12 2 2 4-4"/>
+                    </svg>
+                </div>
+                <!-- Primary Button -->
+                <button class="w-full bg-[#EDEDED] py-4 rounded-full text-black font-semibold text-sm shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] mt-8">
+                    Say Hi!
+                </button>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

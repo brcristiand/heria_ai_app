@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "888391480240",
+    "project_id": "heria-ai-app-br",
+    "storage_bucket": "heria-ai-app-br.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:888391480240:android:f556576542f156e8969c75",
+        "android_client_info": {
+          "package_name": "com.example.heria_ai_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqdrgVTi1o1XNsI1ksLpZs_WX1OMISBhk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
