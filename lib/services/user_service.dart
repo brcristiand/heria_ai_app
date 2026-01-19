@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart'; // Added for debugPrint
 
 class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  bool _isSyncing = false;
 
   Future<String> createUser({
     required String username,
@@ -11,6 +13,7 @@ class UserService {
     required String height,
   }) async {
     try {
+      debugPrint('UserService: Creating user $username');
       // Fetch all progressions to initialize levels
       final progressionsSnapshot = await _firestore
           .collection('progressions')
@@ -34,9 +37,11 @@ class UserService {
       // Store user ID locally
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_id', docRef.id);
+      debugPrint('UserService: User created with ID ${docRef.id}');
 
       return docRef.id;
     } catch (e) {
+      debugPrint('UserService: Error creating user: $e');
       rethrow;
     }
   }
@@ -47,9 +52,20 @@ class UserService {
   }
 
   Future<void> syncUserProgressions(String userId) async {
+    if (_isSyncing) {
+      debugPrint('UserService: Sync already in progress for $userId');
+      return;
+    }
+    _isSyncing = true;
+    debugPrint('UserService: Starting sync for user $userId');
+
     try {
       final userDoc = await _firestore.collection('users').doc(userId).get();
-      if (!userDoc.exists) return;
+      if (!userDoc.exists) {
+        debugPrint('UserService: User document $userId does not exist');
+        _isSyncing = false;
+        return;
+      }
 
       final userData = userDoc.data() as Map<String, dynamic>;
       final Map<String, dynamic> userProgressionLevels =
@@ -62,6 +78,7 @@ class UserService {
       bool updated = false;
       for (var doc in progressionsSnapshot.docs) {
         if (!userProgressionLevels.containsKey(doc.id)) {
+          debugPrint('UserService: Adding new progression ${doc.id} to user');
           userProgressionLevels[doc.id] =
               1; // Default level 1 for new progressions
           updated = true;
@@ -77,17 +94,24 @@ class UserService {
           .toList();
 
       for (var key in keysToRemove) {
+        debugPrint('UserService: Removing deleted progression $key from user');
         userProgressionLevels.remove(key);
         updated = true;
       }
 
       if (updated) {
+        debugPrint('UserService: Updating user document in Firestore...');
         await _firestore.collection('users').doc(userId).update({
           'progressionLevels': userProgressionLevels,
         });
+        debugPrint('UserService: Sync completed successfully');
+      } else {
+        debugPrint('UserService: No sync needed, data is up-to-date');
       }
     } catch (e) {
-      print('Error syncing progressions: $e');
+      debugPrint('UserService: Error syncing progressions: $e');
+    } finally {
+      _isSyncing = false;
     }
   }
 }

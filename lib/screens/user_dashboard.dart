@@ -49,49 +49,53 @@ class _UserDashboardState extends State<UserDashboard> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(24, 24, 24, 16),
-            child: TypoH1('My Journey', color: Colors.white),
-          ),
-          Expanded(
-            child: StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(_userId)
-                  .snapshots(),
-              builder: (context, userSnapshot) {
-                if (userSnapshot.hasError) {
-                  return Center(child: Text('Error: ${userSnapshot.error}'));
-                }
-                if (userSnapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(_userId)
+            .snapshots(),
+        builder: (context, userSnapshot) {
+          if (userSnapshot.hasError) {
+            debugPrint('UserDashboard: User error: ${userSnapshot.error}');
+            return Center(child: Text('Error: ${userSnapshot.error}'));
+          }
+          if (userSnapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-                  return const Center(
-                    child: Text(
-                      'User data not found',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  );
-                }
+          if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
+            return const Center(
+              child: Text(
+                'User not found',
+                style: TextStyle(color: Colors.white),
+              ),
+            );
+          }
 
-                final userData =
-                    userSnapshot.data!.data() as Map<String, dynamic>;
-                final userLevels = Map<String, dynamic>.from(
-                  userData['progressionLevels'] ?? {},
-                );
+          final userData = userSnapshot.data!.data() as Map<String, dynamic>;
+          final userLevels = Map<String, dynamic>.from(
+            userData['progressionLevels'] ?? {},
+          );
+          final String username = userData['username'] ?? 'User';
 
-                return StreamBuilder<QuerySnapshot>(
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                child: TypoH1('$username\'s Journey', color: Colors.white),
+              ),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('progressions')
                       .orderBy('createdAt', descending: true)
                       .snapshots(),
                   builder: (context, progressionsSnapshot) {
                     if (progressionsSnapshot.hasError) {
+                      debugPrint(
+                        'UserDashboard: Progressions error: ${progressionsSnapshot.error}',
+                      );
                       return Center(
                         child: Text('Error: ${progressionsSnapshot.error}'),
                       );
@@ -103,15 +107,16 @@ class _UserDashboardState extends State<UserDashboard> {
 
                     final docs = progressionsSnapshot.data!.docs;
 
-                    // Reactive sync check: if global progressions count != user levels count
-                    // (or if IDs don't match), trigger sync.
+                    // Reactive sync check
                     if (docs.isNotEmpty) {
                       final globalIds = docs.map((d) => d.id).toSet();
                       final userIds = userLevels.keys.toSet();
 
                       if (!globalIds.every((id) => userIds.contains(id)) ||
                           !userIds.every((id) => globalIds.contains(id))) {
-                        // Sync needed. We wrap in microtask or postFrame to avoid calling during build
+                        debugPrint(
+                          'UserDashboard: Syncing ${globalIds.length} vs ${userIds.length}',
+                        );
                         Future.microtask(
                           () => _userService.syncUserProgressions(_userId!),
                         );
@@ -121,7 +126,7 @@ class _UserDashboardState extends State<UserDashboard> {
                     if (docs.isEmpty) {
                       return const Center(
                         child: TypoH5(
-                          'No active progressions found.',
+                          'No progressions found.',
                           color: Colors.white70,
                         ),
                       );
@@ -149,7 +154,7 @@ class _UserDashboardState extends State<UserDashboard> {
                                 children: [
                                   Expanded(
                                     child: TypoH4(
-                                      progData['name'] ?? 'Unnamed Progression',
+                                      progData['name'] ?? 'Unnamed',
                                       color: Colors.white,
                                     ),
                                   ),
@@ -178,7 +183,7 @@ class _UserDashboardState extends State<UserDashboard> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          'Starting ${progData['name']} at Level $currentLevel...',
+                                          'Starting ${progData['name']}...',
                                         ),
                                       ),
                                     );
@@ -191,11 +196,11 @@ class _UserDashboardState extends State<UserDashboard> {
                       },
                     );
                   },
-                );
-              },
-            ),
-          ),
-        ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
