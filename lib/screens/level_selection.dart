@@ -4,8 +4,7 @@ import '../widgets/medium_img.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/app_text.dart';
 import '../widgets/primary_app_bar.dart';
-import 'complete_beginner.dart';
-import 'test_level.dart';
+import 'user_dashboard.dart';
 import '../utils/smooth_route.dart';
 
 class LevelSelection extends StatefulWidget {
@@ -93,27 +92,11 @@ class _LevelSelectionState extends State<LevelSelection> {
                           children: [
                             const SizedBox(height: 32),
                             PrimaryButton(
-                              text: "I'm a complete beginner",
+                              text: "Go to the User Dashboard",
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  SmoothRoute(
-                                    page: const CompleteBeginner(
-                                      title: 'Complete Beginner',
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            PrimaryButton(
-                              text: "I want to test it right now",
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  SmoothRoute(
-                                    page: const TestLevel(title: 'Test Level'),
-                                  ),
+                                  SmoothRoute(page: const UserDashboard()),
                                 );
                               },
                             ),
