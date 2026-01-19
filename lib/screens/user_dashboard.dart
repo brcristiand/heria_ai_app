@@ -103,6 +103,21 @@ class _UserDashboardState extends State<UserDashboard> {
 
                     final docs = progressionsSnapshot.data!.docs;
 
+                    // Reactive sync check: if global progressions count != user levels count
+                    // (or if IDs don't match), trigger sync.
+                    if (docs.isNotEmpty) {
+                      final globalIds = docs.map((d) => d.id).toSet();
+                      final userIds = userLevels.keys.toSet();
+
+                      if (!globalIds.every((id) => userIds.contains(id)) ||
+                          !userIds.every((id) => globalIds.contains(id))) {
+                        // Sync needed. We wrap in microtask or postFrame to avoid calling during build
+                        Future.microtask(
+                          () => _userService.syncUserProgressions(_userId!),
+                        );
+                      }
+                    }
+
                     if (docs.isEmpty) {
                       return const Center(
                         child: TypoH5(
