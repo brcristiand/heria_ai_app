@@ -38,9 +38,57 @@ class _UserDashboardState extends State<UserDashboard> {
     }
   }
 
+  Future<Map<String, dynamic>?> _getRecommendation(
+    String progressionId,
+    Map<String, dynamic> userData,
+  ) async {
+    final payload = {
+      'username': userData['username']?.toString() ?? 'User',
+      'age': userData['age']?.toString() ?? '',
+      'height': userData['height']?.toString() ?? '',
+      'weight': userData['weight']?.toString() ?? '',
+      'progression': progressionId,
+    };
+
+    debugPrint('Sending Webhook Payload: ${jsonEncode(payload)}');
+
+    final response = await http.post(
+      Uri.parse(
+        'https://heriaaiflutter.app.n8n.cloud/webhook/cbf86aa2-f289-4a1c-b5c3-2da81e79e925',
+      ),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode(payload),
+    );
+
+    debugPrint('Webhook Status: ${response.statusCode}');
+    debugPrint('Webhook Body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        throw Exception(
+          'The server returned an empty response. Ensure your n8n workflow has a "Respond to Webhook" node with data.',
+        );
+      }
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['recommendation'] != null) {
+        return data['recommendation'];
+      } else {
+        throw Exception('Invalid response format: ${response.body}');
+      }
+    } else {
+      throw Exception(
+        'Failed to fetch recommendation (Status: ${response.statusCode})',
+      );
+    }
+  }
+
   Future<void> _showRecommendationDialog(
     BuildContext context,
     Map<String, dynamic> userData,
+    String progressionId,
     String progressionName,
   ) async {
     showDialog(
@@ -52,103 +100,178 @@ class _UserDashboardState extends State<UserDashboard> {
     );
 
     try {
-      final response = await http.post(
-        Uri.parse(
-          'https://heriaaiflutter.app.n8n.cloud/webhook/cbf86aa2-f289-4a1c-b5c3-2da81e79e925',
-        ),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': userData['username'],
-          'age': userData['age'],
-          'height': userData['height'],
-          'weight': userData['weight'],
-          'progression': progressionName,
-        }),
-      );
+      final rec = await _getRecommendation(progressionId, userData);
 
-      if (mounted) Navigator.pop(context); // Close loading
+      if (!context.mounted) return;
+      Navigator.pop(context); // Close loading
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true && data['recommendation'] != null) {
-          final rec = data['recommendation'];
-          if (mounted) {
-            _displayRecommendation(context, rec);
-          }
-        } else {
-          throw Exception('Invalid response format');
-        }
-      } else {
-        throw Exception('Failed to fetch recommendation');
+      if (rec != null) {
+        _displayRecommendation(
+          context,
+          rec,
+          progressionName,
+          userData,
+          progressionId,
+        );
       }
     } catch (e) {
-      if (mounted) {
-        // Attempt to pop if dialog is still showing (simplified)
-        // Navigator.pop(context);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
+      debugPrint('Webhook Error: $e');
+      if (!context.mounted) return;
+      Navigator.pop(context); // Close loading if fetch failed
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
-  void _displayRecommendation(BuildContext context, dynamic rec) {
+  void _displayRecommendation(
+    BuildContext context,
+    Map<String, dynamic> initialRec,
+    String progressionName,
+    Map<String, dynamic> userData,
+    String progressionId,
+  ) {
+    Map<String, dynamic> currentRec = initialRec;
+    bool isStepLoading = false;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: const Color(0xFF1A1A1A),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TypoH3(
-                  rec['exercise'] ?? 'Recommended Exercise',
-                  color: Colors.white,
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Dialog(
+              backgroundColor: const Color(0xFF1A1A1A),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TypoH5(progressionName, color: Colors.white70),
+                        const SizedBox(height: 8),
+                        if (isStepLoading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 40),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else ...[
+                          TypoH3(
+                            currentRec['exercise'] ?? 'Recommended Exercise',
+                            color: Colors.white,
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: TypoH6(
+                              'Level ${currentRec['level']}',
+                              color: Colors.white70,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildStatCol(
+                                'Sets',
+                                currentRec['sets'].toString(),
+                              ),
+                              _buildStatCol(
+                                'Reps',
+                                currentRec['reps'].toString(),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          const TypoH6('Explanation', color: Colors.white70),
+                          const SizedBox(height: 8),
+                          Text(
+                            currentRec['explanation'] ?? '',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          SizedBox(
+                            width: double.infinity,
+                            child: PrimaryButton(
+                              text: 'Next Exercise',
+                              onPressed: () async {
+                                setModalState(() => isStepLoading = true);
+                                try {
+                                  // Save current exercise
+                                  await FirebaseFirestore.instance
+                                      .collection('users')
+                                      .doc(_userId)
+                                      .collection('workouts')
+                                      .add({
+                                        'progressionName': progressionName,
+                                        'exercise': currentRec['exercise'],
+                                        'level': currentRec['level'],
+                                        'sets': currentRec['sets'],
+                                        'reps': currentRec['reps'],
+                                        'explanation':
+                                            currentRec['explanation'],
+                                        'timestamp':
+                                            FieldValue.serverTimestamp(),
+                                      });
+
+                                  // Fetch next exercise
+                                  final nextRec = await _getRecommendation(
+                                    progressionId,
+                                    userData,
+                                  );
+
+                                  if (context.mounted) {
+                                    setModalState(() {
+                                      if (nextRec != null) {
+                                        currentRec = nextRec;
+                                      }
+                                      isStepLoading = false;
+                                    });
+                                  }
+                                } catch (e) {
+                                  debugPrint('Error: $e');
+                                  if (context.mounted) {
+                                    setModalState(() => isStepLoading = false);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error: $e')),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white70),
+                      onPressed: () => Navigator.pop(context),
+                    ),
                   ),
-                  child: TypoH6('Level ${rec['level']}', color: Colors.white70),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatCol('Sets', rec['sets'].toString()),
-                    _buildStatCol('Reps', rec['reps'].toString()),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                const TypoH6('Explanation', color: Colors.white70),
-                const SizedBox(height: 8),
-                Text(
-                  rec['explanation'] ?? '',
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  child: PrimaryButton(
-                    text: 'Next Exercise',
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -293,7 +416,9 @@ class _UserDashboardState extends State<UserDashboard> {
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.1),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: TypoH6(
@@ -311,6 +436,7 @@ class _UserDashboardState extends State<UserDashboard> {
                                   onPressed: () => _showRecommendationDialog(
                                     context,
                                     userData,
+                                    progId,
                                     progressionName,
                                   ),
                                 ),
