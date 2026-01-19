@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../widgets/primary_app_bar.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/app_text.dart';
@@ -34,6 +36,132 @@ class _UserDashboardState extends State<UserDashboard> {
         await _userService.syncUserProgressions(id);
       }
     }
+  }
+
+  Future<void> _showRecommendationDialog(
+    BuildContext context,
+    Map<String, dynamic> userData,
+    String progressionName,
+  ) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+
+    try {
+      final response = await http.post(
+        Uri.parse(
+          'https://heriaaiflutter.app.n8n.cloud/webhook/cbf86aa2-f289-4a1c-b5c3-2da81e79e925',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': userData['username'],
+          'age': userData['age'],
+          'height': userData['height'],
+          'weight': userData['weight'],
+          'progression': progressionName,
+        }),
+      );
+
+      if (mounted) Navigator.pop(context); // Close loading
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['recommendation'] != null) {
+          final rec = data['recommendation'];
+          if (mounted) {
+            _displayRecommendation(context, rec);
+          }
+        } else {
+          throw Exception('Invalid response format');
+        }
+      } else {
+        throw Exception('Failed to fetch recommendation');
+      }
+    } catch (e) {
+      if (mounted) {
+        // Attempt to pop if dialog is still showing (simplified)
+        // Navigator.pop(context);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
+  }
+
+  void _displayRecommendation(BuildContext context, dynamic rec) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TypoH3(
+                  rec['exercise'] ?? 'Recommended Exercise',
+                  color: Colors.white,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: TypoH6('Level ${rec['level']}', color: Colors.white70),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildStatCol('Sets', rec['sets'].toString()),
+                    _buildStatCol('Reps', rec['reps'].toString()),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                const TypoH6('Explanation', color: Colors.white70),
+                const SizedBox(height: 8),
+                Text(
+                  rec['explanation'] ?? '',
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: PrimaryButton(
+                    text: 'Next Exercise',
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatCol(String label, String value) {
+    return Column(
+      children: [
+        TypoH6(label, color: Colors.white70),
+        const SizedBox(height: 4),
+        TypoH2(value, color: Colors.white),
+      ],
+    );
   }
 
   @override
@@ -141,6 +269,7 @@ class _UserDashboardState extends State<UserDashboard> {
                         final progId = docs[index].id;
                         final progData =
                             docs[index].data() as Map<String, dynamic>;
+                        final progressionName = progData['name'] ?? 'Unnamed';
                         final currentLevel = userLevels[progId] ?? 1;
 
                         return InfoCard(
@@ -154,7 +283,7 @@ class _UserDashboardState extends State<UserDashboard> {
                                 children: [
                                   Expanded(
                                     child: TypoH4(
-                                      progData['name'] ?? 'Unnamed',
+                                      progressionName,
                                       color: Colors.white,
                                     ),
                                   ),
@@ -179,15 +308,11 @@ class _UserDashboardState extends State<UserDashboard> {
                                 width: double.infinity,
                                 child: PrimaryButton(
                                   text: 'Start Progression',
-                                  onPressed: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Starting ${progData['name']}...',
-                                        ),
-                                      ),
-                                    );
-                                  },
+                                  onPressed: () => _showRecommendationDialog(
+                                    context,
+                                    userData,
+                                    progressionName,
+                                  ),
                                 ),
                               ),
                             ],
