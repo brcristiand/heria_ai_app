@@ -106,7 +106,11 @@ class _NameScreenState extends State<NameScreen> {
                               ? () {
                                   Navigator.push(
                                     context,
-                                    SmoothRoute(page: const Age()),
+                                    SmoothRoute(
+                                      page: Age(
+                                        username: _nameController.text.trim(),
+                                      ),
+                                    ),
                                   );
                                 }
                               : null,

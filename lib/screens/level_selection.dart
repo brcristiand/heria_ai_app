@@ -4,19 +4,68 @@ import '../widgets/medium_img.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/app_text.dart';
 import '../widgets/primary_app_bar.dart';
+import '../services/user_service.dart';
 import 'user_dashboard.dart';
 import '../utils/smooth_route.dart';
 
 class LevelSelection extends StatefulWidget {
-  const LevelSelection({super.key, required this.title});
-
   final String title;
+  final String username;
+  final String age;
+  final String weight;
+  final String height;
+
+  const LevelSelection({
+    super.key,
+    required this.title,
+    required this.username,
+    required this.age,
+    required this.weight,
+    required this.height,
+  });
 
   @override
   State<LevelSelection> createState() => _LevelSelectionState();
 }
 
 class _LevelSelectionState extends State<LevelSelection> {
+  final UserService _userService = UserService();
+  bool _isCreatingUser = false;
+
+  Future<void> _handleGoToDashboard() async {
+    setState(() {
+      _isCreatingUser = true;
+    });
+
+    try {
+      await _userService.createUser(
+        username: widget.username,
+        age: widget.age,
+        weight: widget.weight,
+        height: widget.height,
+      );
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          SmoothRoute(page: const UserDashboard()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error creating user: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingUser = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,13 +141,12 @@ class _LevelSelectionState extends State<LevelSelection> {
                           children: [
                             const SizedBox(height: 32),
                             PrimaryButton(
-                              text: "Go to the User Dashboard",
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  SmoothRoute(page: const UserDashboard()),
-                                );
-                              },
+                              text: _isCreatingUser
+                                  ? "Creating User..."
+                                  : "Go to the User Dashboard",
+                              onPressed: _isCreatingUser
+                                  ? null
+                                  : _handleGoToDashboard,
                             ),
                             const SizedBox(height: 8),
                           ],

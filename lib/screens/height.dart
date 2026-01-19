@@ -8,8 +8,29 @@ import '../widgets/primary_input.dart';
 import 'level_selection.dart';
 import '../utils/smooth_route.dart';
 
-class Height extends StatelessWidget {
-  const Height({super.key});
+class Height extends StatefulWidget {
+  final String username;
+  final String age;
+  final String weight;
+  const Height({
+    super.key,
+    required this.username,
+    required this.age,
+    required this.weight,
+  });
+
+  @override
+  State<Height> createState() => _HeightState();
+}
+
+class _HeightState extends State<Height> {
+  final TextEditingController _heightController = TextEditingController();
+
+  @override
+  void dispose() {
+    _heightController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +77,10 @@ class Height extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 24),
-                            const PrimaryInput(
+                            PrimaryInput(
                               hintText: 'Please insert your height (cm)...',
+                              controller: _heightController,
+                              keyboardType: TextInputType.number,
                             ),
                             const SizedBox(height: 8),
                           ],
@@ -75,11 +98,16 @@ class Height extends StatelessWidget {
                         child: PrimaryButton(
                           text: 'Continue',
                           onPressed: () {
+                            if (_heightController.text.trim().isEmpty) return;
                             Navigator.push(
                               context,
                               SmoothRoute(
-                                page: const LevelSelection(
+                                page: LevelSelection(
                                   title: 'Select Level',
+                                  username: widget.username,
+                                  age: widget.age,
+                                  weight: widget.weight,
+                                  height: _heightController.text.trim(),
                                 ),
                               ),
                             );

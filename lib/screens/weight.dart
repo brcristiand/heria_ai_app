@@ -8,8 +8,23 @@ import '../widgets/primary_input.dart';
 import 'height.dart';
 import '../utils/smooth_route.dart';
 
-class Weight extends StatelessWidget {
-  const Weight({super.key});
+class Weight extends StatefulWidget {
+  final String username;
+  final String age;
+  const Weight({super.key, required this.username, required this.age});
+
+  @override
+  State<Weight> createState() => _WeightState();
+}
+
+class _WeightState extends State<Weight> {
+  final TextEditingController _weightController = TextEditingController();
+
+  @override
+  void dispose() {
+    _weightController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +71,10 @@ class Weight extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 24),
-                            const PrimaryInput(
+                            PrimaryInput(
                               hintText: 'Please insert your weight (kg)...',
+                              controller: _weightController,
+                              keyboardType: TextInputType.number,
                             ),
                             const SizedBox(height: 8),
                           ],
@@ -75,9 +92,16 @@ class Weight extends StatelessWidget {
                         child: PrimaryButton(
                           text: 'Continue',
                           onPressed: () {
+                            if (_weightController.text.trim().isEmpty) return;
                             Navigator.push(
                               context,
-                              SmoothRoute(page: const Height()),
+                              SmoothRoute(
+                                page: Height(
+                                  username: widget.username,
+                                  age: widget.age,
+                                  weight: _weightController.text.trim(),
+                                ),
+                              ),
                             );
                           },
                         ),

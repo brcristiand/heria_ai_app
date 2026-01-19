@@ -8,8 +8,22 @@ import '../widgets/primary_input.dart';
 import 'weight.dart';
 import '../utils/smooth_route.dart';
 
-class Age extends StatelessWidget {
-  const Age({super.key});
+class Age extends StatefulWidget {
+  final String username;
+  const Age({super.key, required this.username});
+
+  @override
+  State<Age> createState() => _AgeState();
+}
+
+class _AgeState extends State<Age> {
+  final TextEditingController _ageController = TextEditingController();
+
+  @override
+  void dispose() {
+    _ageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +70,10 @@ class Age extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 24),
-                            const PrimaryInput(
+                            PrimaryInput(
                               hintText: 'Please insert your age...',
+                              controller: _ageController,
+                              keyboardType: TextInputType.number,
                             ),
                             const SizedBox(height: 8),
                           ],
@@ -75,9 +91,15 @@ class Age extends StatelessWidget {
                         child: PrimaryButton(
                           text: 'Continue',
                           onPressed: () {
+                            if (_ageController.text.trim().isEmpty) return;
                             Navigator.push(
                               context,
-                              SmoothRoute(page: const Weight()),
+                              SmoothRoute(
+                                page: Weight(
+                                  username: widget.username,
+                                  age: _ageController.text.trim(),
+                                ),
+                              ),
                             );
                           },
                         ),
