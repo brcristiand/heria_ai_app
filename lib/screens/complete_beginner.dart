@@ -6,7 +6,7 @@ import '../widgets/primary_button.dart';
 import '../widgets/app_text.dart';
 import '../widgets/primary_app_bar.dart';
 
-import 'name_screen.dart';
+import 'user_dashboard.dart';
 import '../utils/smooth_route.dart';
 
 class CompleteBeginner extends StatefulWidget {
@@ -101,11 +101,11 @@ class _CompleteBeginnerState extends State<CompleteBeginner> {
                               Transform.translate(
                                 offset: const Offset(0, -24),
                                 child: PrimaryButton(
-                                  text: 'Start a Personal Goal',
+                                  text: 'Go to Dashboard',
                                   onPressed: () {
                                     Navigator.push(
                                       context,
-                                      SmoothRoute(page: const NameScreen()),
+                                      SmoothRoute(page: const UserDashboard()),
                                     );
                                   },
                                 ),

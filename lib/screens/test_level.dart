@@ -102,24 +102,14 @@ class _TestLevelState extends State<TestLevel> {
                               Transform.translate(
                                 offset: const Offset(0, -24),
                                 child: PrimaryButton(
-                                  text: 'Start Session',
+                                  text: 'Go to User Dashboard',
                                   onPressed: () {
                                     Navigator.push(
                                       context,
-                                      SmoothRoute(page: const Age()),
+                                      SmoothRoute(page: const UserDashboard()),
                                     );
                                   },
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              PrimaryButton(
-                                text: 'Go to User Dashboard',
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    SmoothRoute(page: const UserDashboard()),
-                                  );
-                                },
                               ),
                             ],
                           ),
