@@ -25,14 +25,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
     if (name.isEmpty) return;
 
     try {
-      await _firestore.collection('progressions').add({
+      // 1. Create the progression
+      final docRef = await _firestore.collection('progressions').add({
         'name': name,
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      // 2. Global Sync: Add this progression ID to all existing users
+      final usersSnapshot = await _firestore.collection('users').get();
+      final batch = _firestore.batch();
+
+      for (var userDoc in usersSnapshot.docs) {
+        batch.update(userDoc.reference, {
+          'progressionLevels.${docRef.id}': 1, // Initialize to Level 1
+        });
+      }
+
+      await batch.commit();
+
       _progressionNameController.clear();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Progression added successfully!')),
+          const SnackBar(
+            content: Text('Progression added and synced to all users!'),
+          ),
         );
       }
     } catch (e) {
@@ -40,6 +56,39 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Error adding progression: $e')));
+      }
+    }
+  }
+
+  Future<void> _deleteProgression(String progressionId) async {
+    try {
+      // 1. Delete the progression
+      await _firestore.collection('progressions').doc(progressionId).delete();
+
+      // 2. Global Sync: Remove this progression ID from all existing users
+      final usersSnapshot = await _firestore.collection('users').get();
+      final batch = _firestore.batch();
+
+      for (var userDoc in usersSnapshot.docs) {
+        batch.update(userDoc.reference, {
+          'progressionLevels.$progressionId': FieldValue.delete(),
+        });
+      }
+
+      await batch.commit();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Progression deleted and removed from all users.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting progression: $e')),
+        );
       }
     }
   }
@@ -141,10 +190,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 color: Colors.redAccent,
                                 size: 20,
                               ),
-                              onPressed: () => _firestore
-                                  .collection('progressions')
-                                  .doc(doc.id)
-                                  .delete(),
+                              onPressed: () => _deleteProgression(doc.id),
                             ),
                           ],
                         ),

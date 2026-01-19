@@ -145,15 +145,23 @@ stream: FirebaseFirestore.instance
 
 **Date Range: Jan 19, 2026**
 
-- **Sequential Onboarding**: Established a strict navigation flow: `HomeScreen` -> `NameScreen` -> `AgeScreen` -> `WeightScreen` -> `HeightScreen` -> `LevelSelection` -> `UserDashboard`.
-- **Data Persistence**:
-  - Created `UserService` to handle Firestore operations.
-  - Implemented `createUser` to capture and store `username`, `age`, `weight`, and `height`.
-  - Integrated `SharedPreferences` to persist the unique `user_id` locally.
-- **Progression Synchronization**:
+- **Sequential Onboarding**: Established a strict navigation flow: `HomeScreen` -> `NameScreen` -> `AgeScreen` -> `WeightScreen`
+
+### Phase 7: Global Progression Sync (Admin Panel)
+
+- **Goal**: Ensure new progressions added by admins are immediately pushed to all users' profiles.
+- **Implementation**:
+  - Updated `AdminDashboard._addProgression` to fetch all user documents and use a `WriteBatch` to add the new progression ID to each.
+  - Updated `AdminDashboard._deleteProgression` to also remove the progression ID from all users.
+  - Refactored `UserDashboard` for cleaner UI and efficient `StreamBuilder` usage.
+- **Key Files**:
+  - `lib/screens/admin_dashboard.dart`
+  - `lib/screens/user_dashboard.dart`
+
+* **Progression Synchronization**:
   - Initialized users with a `progressionLevels` map containing all available progressions at Level 1.
   - Added a sync mechanism in `UserDashboard` to automatically detect and add newly created progressions from the database to the user's profile.
-- **Git Integration**: Successfully initialized Git, connected to a remote GitHub repository, and resolved authentication issues (PAT usage) to facilitate version control.
+* **Git Integration**: Successfully initialized Git, connected to a remote GitHub repository, and resolved authentication issues (PAT usage) to facilitate version control.
 
 ### Key Implementation: Progression Sync Logic (`user_service.dart`)
 
