@@ -141,4 +141,39 @@ stream: FirebaseFirestore.instance
 
 ---
 
+## Phase 6: User Onboarding Data Sync & Version Control
+
+**Date Range: Jan 19, 2026**
+
+- **Sequential Onboarding**: Established a strict navigation flow: `HomeScreen` -> `NameScreen` -> `AgeScreen` -> `WeightScreen` -> `HeightScreen` -> `LevelSelection` -> `UserDashboard`.
+- **Data Persistence**:
+  - Created `UserService` to handle Firestore operations.
+  - Implemented `createUser` to capture and store `username`, `age`, `weight`, and `height`.
+  - Integrated `SharedPreferences` to persist the unique `user_id` locally.
+- **Progression Synchronization**:
+  - Initialized users with a `progressionLevels` map containing all available progressions at Level 1.
+  - Added a sync mechanism in `UserDashboard` to automatically detect and add newly created progressions from the database to the user's profile.
+- **Git Integration**: Successfully initialized Git, connected to a remote GitHub repository, and resolved authentication issues (PAT usage) to facilitate version control.
+
+### Key Implementation: Progression Sync Logic (`user_service.dart`)
+
+```dart
+Future<void> syncUserProgressions(String userId) async {
+  final userDoc = await _firestore.collection('users').doc(userId).get();
+  final userData = userDoc.data() as Map<String, dynamic>;
+  final userProgressionLevels = Map<String, dynamic>.from(userData['progressionLevels'] ?? {});
+
+  final progressionsSnapshot = await _firestore.collection('progressions').get();
+
+  for (var doc in progressionsSnapshot.docs) {
+    if (!userProgressionLevels.containsKey(doc.id)) {
+      userProgressionLevels[doc.id] = 1; // Default starting level
+      updated = true;
+    }
+  }
+}
+```
+
+---
+
 _Last Updated: Jan 19, 2026_
